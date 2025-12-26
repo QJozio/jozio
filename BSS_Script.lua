@@ -1,4 +1,4 @@
--- [[ JOZEX HUB | SMART PATHFINDING + MISC TAB ]] --
+-- [[ JOZEX HUB | FIELD SELECTION + SMART PATHFINDING ]] --
 local CorrectKey = "Jozex-on-top"
 
 -- 1. JOZEX AUTHENTICATION
@@ -11,9 +11,8 @@ Instance.new("UICorner", Main)
 
 local Title = Instance.new("TextLabel", Main)
 Title.Size, Title.Position = UDim2.new(1, 0, 0, 40), UDim2.new(0, 0, 0, 5)
-Title.Text = "JOZEX ENGINE | AUTH"
-Title.TextColor3, Title.BackgroundTransparency = Color3.fromRGB(0, 120, 215), 1
-Title.Font, Title.TextSize = Enum.Font.GothamBold, 16
+Title.Text, Title.TextColor3 = "JOZEX ENGINE | AUTH", Color3.fromRGB(0, 120, 215)
+Title.BackgroundTransparency, Title.Font, Title.TextSize = 1, Enum.Font.GothamBold, 16
 
 local KeyBox = Instance.new("TextBox", Main)
 KeyBox.Size, KeyBox.Position = UDim2.new(0.8, 0, 0, 35), UDim2.new(0.1, 0, 0.35, 0)
@@ -32,40 +31,52 @@ function LaunchJozex()
     local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
     local Window = Rayfield:CreateWindow({
         Name = "Jozex Hub | Bee Swarm Simulator",
-        LoadingTitle = "Initializing Jozex Systems...",
+        LoadingTitle = "Mapping Field Coordinates...",
         ConfigurationSaving = {Enabled = true, FolderName = "Jozex_BSS"}
     })
 
-    -- SERVICES
+    -- SERVICES & GLOBALS
     local Player = game.Players.LocalPlayer
-    local RunService = game:GetService("RunService")
     local PathfindingService = game:GetService("PathfindingService")
-    
-    -- VARIABLES
     _G.AutoFarm = false
-    _G.NoClip = false
-    local noclipConnection
+    _G.SelectedField = "Clover Field" -- Default
+
+    -- FIELD LIST
+    local BSS_Fields = {
+        "Sunflower Field", "Dandelion Field", "Mushroom Field", "Blue Flower Field", 
+        "Clover Field", "Strawberry Field", "Spider Field", "Bamboo Field", 
+        "Pineapple Patch", "Pumpkin Patch", "Cactus Field", "Rose Field", 
+        "Pine Tree Forest", "Stump Field", "Coconut Field", "Pepper Patch"
+    }
 
     -- [ SMART MOVE FUNCTION ]
     local function SmartMove(target)
-        local Character = Player.Character
-        if not Character then return end
-        local Humanoid = Character:FindFirstChild("Humanoid")
-        local path = PathfindingService:CreatePath({AgentCanJump = false, AgentRadius = 2})
-        path:ComputeAsync(Character.HumanoidRootPart.Position, target)
+        if not Player.Character then return end
+        local path = PathfindingService:CreatePath({AgentCanJump = false, AgentRadius = 2.5})
+        path:ComputeAsync(Player.Character.HumanoidRootPart.Position, target)
         if path.Status == Enum.PathStatus.Success then
-            for _, waypoint in pairs(path:GetWaypoints()) do
+            for _, wp in pairs(path:GetWaypoints()) do
                 if not _G.AutoFarm then break end
-                Humanoid:MoveTo(waypoint.Position)
-                Humanoid.MoveToFinished:Wait(1.5)
+                Player.Character.Humanoid:MoveTo(wp.Position)
+                Player.Character.Humanoid.MoveToFinished:Wait(1.5)
             end
         end
     end
 
-    -- [ TABS ]
-    local MainTab = Window:CreateTab("Auto-Farm", 4483362458)
-    MainTab:CreateToggle({
-        Name = "Smart Path-Farm",
+    -- [ AUTO-FARM TAB ]
+    local FarmTab = Window:CreateTab("Auto-Farm", 4483362458)
+
+    FarmTab:CreateDropdown({
+        Name = "Select Field",
+        Options = BSS_Fields,
+        CurrentOption = "Clover Field",
+        Callback = function(Option)
+            _G.SelectedField = Option
+        end,
+    })
+
+    FarmTab:CreateToggle({
+        Name = "Start Smart Farm",
         CurrentValue = false,
         Callback = function(Value)
             _G.AutoFarm = Value
@@ -75,12 +86,31 @@ function LaunchJozex()
                         task.wait(0.1)
                         local stats = Player:FindFirstChild("CoreStats")
                         if stats and (stats.Pollen.Value / stats.Capacity.Value) >= 0.95 then
+                            -- Bag Full: Path to Hive
                             SmartMove(Player.SpawnPos.Value.Position + Vector3.new(0,0,5))
                             game:GetService("ReplicatedStorage").Events.PlayerHiveCommand:FireServer("ToggleMakeHoney")
                             repeat task.wait(1) until stats.Pollen.Value == 0 or not _G.AutoFarm
                         else
-                            local token = game.Workspace.Collectibles:FindFirstChildOfClass("BasePart")
-                            if token then SmartMove(token.Position) end
+                            -- Farm Logic: Stay in Selected Field
+                            local fieldPart = game.Workspace.FlowerZones:FindFirstChild(_G.SelectedField)
+                            if fieldPart then
+                                -- Logic: Find token inside that specific field
+                                local targetToken = nil
+                                for _, t in pairs(game.Workspace.Collectibles:GetChildren()) do
+                                    -- Checks if token is within field bounds
+                                    if t:IsA("BasePart") and (t.Position - fieldPart.Position).Magnitude < 50 then
+                                        targetToken = t
+                                        break
+                                    end
+                                end
+                                
+                                if targetToken then
+                                    SmartMove(targetToken.Position)
+                                else
+                                    -- If no tokens, walk to center of field
+                                    SmartMove(fieldPart.Position)
+                                end
+                            end
                         end
                     end
                 end)
@@ -90,55 +120,12 @@ function LaunchJozex()
 
     -- [ MISC TAB ]
     local MiscTab = Window:CreateTab("Misc", 4483362458)
-
-    MiscTab:CreateSection("Character Modifiers")
-
     MiscTab:CreateSlider({
-        Name = "WalkSpeed",
-        Range = {16, 300},
-        Increment = 1,
-        CurrentValue = 16,
-        Callback = function(v)
-            if Player.Character and Player.Character:FindFirstChild("Humanoid") then
-                Player.Character.Humanoid.WalkSpeed = v
-            end
-        end
+        Name = "WalkSpeed", Range = {16, 250}, Increment = 1, CurrentValue = 16,
+        Callback = function(v) Player.Character.Humanoid.WalkSpeed = v end
     })
 
-    MiscTab:CreateToggle({
-        Name = "Noclip",
-        CurrentValue = false,
-        Callback = function(Value)
-            _G.NoClip = Value
-            if _G.NoClip then
-                -- Start Noclip
-                noclipConnection = RunService.Stepped:Connect(function()
-                    if _G.NoClip and Player.Character then
-                        for _, v in pairs(Player.Character:GetDescendants()) do
-                            if v:IsA("BasePart") then
-                                v.CanCollide = false
-                            end
-                        end
-                    end
-                end)
-            else
-                -- Stop Noclip
-                if noclipConnection then 
-                    noclipConnection:Disconnect() 
-                end
-                -- Reset collisions
-                if Player.Character then
-                    for _, v in pairs(Player.Character:GetDescendants()) do
-                        if v:IsA("BasePart") then
-                            v.CanCollide = true
-                        end
-                    end
-                end
-            end
-        end
-    })
-
-    Rayfield:Notify({Title = "Jozex Loaded", Content = "Welcome back. Misc tab added.", Duration = 5})
+    Rayfield:Notify({Title = "Jozex Active", Content = "Field modules loaded.", Duration = 5})
 end
 
 -- 3. LOGIN LOGIC
@@ -147,8 +134,6 @@ Btn.MouseButton1Click:Connect(function()
         ScreenGui:Destroy()
         LaunchJozex()
     else
-        Btn.Text = "WRONG KEY"
-        task.wait(1)
-        Btn.Text = "LOGIN"
+        Btn.Text = "WRONG KEY"; task.wait(1); Btn.Text = "LOGIN"
     end
 end)
