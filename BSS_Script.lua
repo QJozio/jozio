@@ -1,136 +1,110 @@
--- [[ QJOZIO HUB: FINAL INTEGRATED MASTER ]] --
-repeat task.wait() until game:IsLoaded()
+-- [[ QJOZIO HUB: PURE ATLAS SOURCE ]] --
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "QJozio Hub | Atlass v4",
+   LoadingTitle = "Loading Atlass Source...",
+   LoadingSubtitle = "by QJozio",
+   ConfigurationSaving = {Enabled = true, FolderName = "QJozioBSS"}
+})
+
+-- ATLAS INTERNAL VARIABLES
 local LP = game.Players.LocalPlayer
+local _G = {Farm = false, Tokens = false, Mobs = false, Sprinklers = false}
+local selectedField = "Dandelion"
 
--- Notification Function
-local function Notify(text)
-    local sg = Instance.new("ScreenGui", game.CoreGui)
-    local frame = Instance.new("Frame", sg)
-    frame.Size = UDim2.new(0, 200, 0, 50)
-    frame.Position = UDim2.new(0.5, -100, 0.1, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-    Instance.new("UICorner", frame)
-    local label = Instance.new("TextLabel", frame)
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.Text = text
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.BackgroundTransparency = 1
-    game:GetService("Debris"):AddItem(sg, 3)
-end
-
-Notify("QJozio Hub Loading...")
-
--- 1. INTERNAL UI LIBRARY
-local QJozioLib = {}
-function QJozioLib:CreateWindow(Name)
-    local sg = Instance.new("ScreenGui", game.CoreGui)
-    local Main = Instance.new("Frame", sg)
-    Main.Size = UDim2.new(0, 380, 0, 220)
-    Main.Position = UDim2.new(0.5, -190, 0.5, -110)
-    Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    Main.Active = true
-    Main.Draggable = true
-    Instance.new("UICorner", Main)
-
-    local TabSide = Instance.new("Frame", Main)
-    TabSide.Size = UDim2.new(0, 90, 1, -10)
-    TabSide.Position = UDim2.new(0, 5, 0, 5)
-    TabSide.BackgroundTransparency = 0.8
-    Instance.new("UIListLayout", TabSide).Padding = UDim.new(0, 5)
-
-    local Pages = Instance.new("Frame", Main)
-    Pages.Size = UDim2.new(1, -105, 1, -10)
-    Pages.Position = UDim2.new(0, 100, 0, 5)
-    Pages.BackgroundTransparency = 1
-
-    local Hub = {}
-    function Hub:CreateTab(TabName)
-        local P = Instance.new("ScrollingFrame", Pages)
-        P.Size = UDim2.new(1, 0, 1, 0)
-        P.Visible = false
-        P.BackgroundTransparency = 1
-        P.CanvasSize = UDim2.new(0, 0, 2, 0)
-        P.ScrollBarThickness = 2
-        Instance.new("UIListLayout", P).Padding = UDim.new(0, 5)
-
-        local B = Instance.new("TextButton", TabSide)
-        B.Size = UDim2.new(1, 0, 0, 30)
-        B.Text = TabName
-        B.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        B.TextColor3 = Color3.new(1, 1, 1)
-        B.MouseButton1Click:Connect(function()
-            for _, v in pairs(Pages:GetChildren()) do v.Visible = false end
-            P.Visible = true
-        end)
-        
-        if #TabSide:GetChildren() == 2 then P.Visible = true end
-
-        local Elm = {}
-        function Elm:AddToggle(Txt, cb)
-            local T = Instance.new("TextButton", P)
-            T.Size = UDim2.new(1, -10, 0, 35)
-            T.Text = Txt .. ": OFF"
-            T.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-            T.TextColor3 = Color3.new(1, 1, 1)
-            Instance.new("UICorner", T)
-            local s = false
-            T.MouseButton1Click:Connect(function()
-                s = not s
-                T.Text = Txt .. (s and ": ON" or ": OFF")
-                T.BackgroundColor3 = s and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(45, 45, 45)
-                cb(s)
-            end)
-        end
-        return Elm
-    end
-    return Hub
-end
-
--- 2. DATA & ENGINE
-local farmOn, tokensOn = false, true
 local Fields = {
-    ["Dandelion"] = Vector3.new(-30, 5, 225),
-    ["Sunflower"] = Vector3.new(-210, 5, 185),
-    ["Pine Tree"] = Vector3.new(-315, 70, -215)
+    ["Dandelion"] = Vector3.new(-30, 5, 225), ["Sunflower"] = Vector3.new(-210, 5, 185),
+    ["Mushroom"] = Vector3.new(-95, 5, 115), ["Blue Flower"] = Vector3.new(115, 5, 100),
+    ["Clover"] = Vector3.new(175, 34, 190), ["Spider"] = Vector3.new(-50, 20, -5),
+    ["Bamboo"] = Vector3.new(95, 20, -25), ["Pine Tree"] = Vector3.new(-315, 70, -215),
+    ["Mountain Top"] = Vector3.new(75, 176, -140), ["Coconut"] = Vector3.new(-255, 72, 460),
+    ["Pepper"] = Vector3.new(-480, 124, 530), ["Stump"] = Vector3.new(420, 35, -175)
 }
 
--- 3. INITIALIZE
-local MyHub = QJozioLib:CreateWindow("QJozio Hub")
-local Farm = MyHub:CreateTab("Farm")
-local Combat = MyHub:CreateTab("Combat")
+-- TABS
+local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
+local CombatTab = Window:CreateTab("Combat", 4483362458)
 
-Farm:AddToggle("Master Farm", function(v) farmOn = v end)
-Farm:AddToggle("Collect Tokens", function(v) tokensOn = v end)
-Combat:AddToggle("Auto-Kill Mobs", function(v) _G.KillMobs = v end)
+-- ELEMENTS
+FarmTab:CreateToggle({
+   Name = "Atlass Auto-Farm",
+   CurrentValue = false,
+   Callback = function(v) _G.Farm = v end,
+})
 
--- 4. THE LOOP
+FarmTab:CreateToggle({
+   Name = "Instant CFrame Magnet",
+   CurrentValue = false,
+   Callback = function(v) _G.Tokens = v end,
+})
+
+FarmTab:CreateToggle({
+   Name = "Atlass Sprinklers",
+   CurrentValue = false,
+   Callback = function(v) _G.Sprinklers = v end,
+})
+
+FarmTab:CreateDropdown({
+   Name = "Field",
+   Options = {"Dandelion","Sunflower","Mushroom","Blue Flower","Clover","Spider","Bamboo","Pine Tree","Mountain Top","Coconut","Pepper","Stump"},
+   CurrentOption = "Dandelion",
+   Callback = function(v) selectedField = v end,
+})
+
+CombatTab:CreateToggle({
+   Name = "Monster Kill-Aura",
+   CurrentValue = false,
+   Callback = function(v) _G.Mobs = v end,
+})
+
+-- PURE ATLAS ENGINE
 task.spawn(function()
     local angle = 0
-    while task.wait(0.05) do
-        if farmOn and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            local hum = LP.Character.Humanoid
+    while task.wait(0.001) do
+        if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then continue end
+        local root = LP.Character.HumanoidRootPart
+        local hum = LP.Character.Humanoid
+
+        if _G.Farm then
             local stats = LP:WaitForChild("CoreStats")
-            
-            if stats.Pollen.Value >= stats.Capacity.Value * 0.95 then
+            if stats.Pollen.Value >= stats.Capacity.Value * 0.99 then
                 hum:MoveTo(LP.SpawnPos.Value.Position)
             else
-                local target = nil
-                if tokensOn then
+                -- Atlass Instant Token Logic
+                local targetToken = nil
+                if _G.Tokens then
                     for _, v in pairs(workspace.Collectibles:GetChildren()) do
-                        if (v.Position - LP.Character.HumanoidRootPart.Position).Magnitude < 50 then target = v break end
+                        if (v.Position - root.Position).Magnitude < 100 then
+                            targetToken = v
+                            break 
+                        end
                     end
                 end
-                
-                if target then
-                    hum:MoveTo(target.Position)
+
+                if targetToken then
+                    root.CFrame = CFrame.new(targetToken.Position)
                 else
-                    angle = angle + 0.3
-                    hum:MoveTo(Fields["Dandelion"] + Vector3.new(math.sin(angle)*30, 0, math.cos(angle)*30))
+                    angle = angle + 0.8
+                    local goal = Fields[selectedField] + Vector3.new(math.sin(angle)*35, 0, math.cos(angle)*35)
+                    hum:MoveTo(goal)
                 end
+                
+                -- Tools & Remote Events
                 if LP.Character:FindFirstChildOfClass("Tool") then LP.Character:FindFirstChildOfClass("Tool"):Activate() end
+                if _G.Sprinklers then
+                    game.ReplicatedStorage.Events.PlayerGiveEvent:FireServer("Sprinkler")
+                end
+            end
+        end
+
+        -- Atlass Altitude Combat
+        if _G.Mobs then
+            for _, mob in pairs(workspace.Monsters:GetChildren()) do
+                if mob:FindFirstChild("HumanoidRootPart") and (mob.HumanoidRootPart.Position - root.Position).Magnitude < 70 then
+                    root.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 20, 0)
+                end
             end
         end
     end
 end)
-
-Notify("QJozio Hub: SUCCESS!")
