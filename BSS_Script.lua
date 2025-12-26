@@ -1,80 +1,147 @@
--- [[ JOZEX HUB | STABLE SAFE-LOAD BUILD ]] --
+-- [[ JOZEX HUB | DIRECT-LOAD UNIVERSAL ]] --
 repeat task.wait() until game:IsLoaded()
 
 local CorrectKey = "Jozex-on-top"
 local KeyLink = "Https://direct-link.net/2552546/CxGwpvRqOVJH"
 
--- 1. STABLE DRAGGABLE AUTH UI
+-- 1. AUTHENTICATION UI
 local LoginScreen = Instance.new("ScreenGui", game.CoreGui)
-LoginScreen.Name = "Jozex_SafeAuth"
-
 local Main = Instance.new("Frame", LoginScreen)
-Main.Size, Main.Position = UDim2.new(0, 300, 0, 220), UDim2.new(0.5, -150, 0.5, -110)
-Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Main.Active = true
-Main.Draggable = true 
+Main.Size, Main.Position = UDim2.new(0, 280, 0, 180), UDim2.new(0.5, -140, 0.5, -90)
+Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Main.Active, Main.Draggable = true, true
 Instance.new("UICorner", Main)
 
 local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = "JOZEX HUB | LOGIN"
+Title.Size, Title.Text = UDim2.new(1, 0, 0, 40), "JOZEX HUB LOGIN"
 Title.TextColor3, Title.BackgroundTransparency = Color3.new(1,1,1), 1
 Title.Font = Enum.Font.GothamBold
 
 local KeyBox = Instance.new("TextBox", Main)
 KeyBox.Size, KeyBox.Position = UDim2.new(0.8, 0, 0, 35), UDim2.new(0.1, 0, 0.35, 0)
-KeyBox.PlaceholderText = "Paste Key Here..."
-KeyBox.Text = ""
-KeyBox.BackgroundColor3, KeyBox.TextColor3 = Color3.fromRGB(30, 30, 30), Color3.new(1,1,1)
+KeyBox.PlaceholderText, KeyBox.Text = "Paste Key...", ""
+KeyBox.BackgroundColor3, KeyBox.TextColor3 = Color3.fromRGB(35, 35, 35), Color3.new(1,1,1)
 Instance.new("UICorner", KeyBox)
 
 local LoginBtn = Instance.new("TextButton", Main)
-LoginBtn.Size, LoginBtn.Position = UDim2.new(0.8, 0, 0, 40), UDim2.new(0.1, 0, 0.58, 0)
-LoginBtn.Text, LoginBtn.BackgroundColor3 = "LOGIN", Color3.fromRGB(0, 120, 215)
+LoginBtn.Size, LoginBtn.Position = UDim2.new(0.8, 0, 0, 40), UDim2.new(0.1, 0, 0.65, 0)
+LoginBtn.Text, LoginBtn.BackgroundColor3 = "LOGIN", Color3.fromRGB(0, 150, 255)
 LoginBtn.TextColor3, LoginBtn.Font = Color3.new(1,1,1), Enum.Font.GothamBold
 Instance.new("UICorner", LoginBtn)
 
-local GetKeyBtn = Instance.new("TextButton", Main)
-GetKeyBtn.Size, GetKeyBtn.Position = UDim2.new(0.8, 0, 0, 30), UDim2.new(0.1, 0, 0.8, 0)
-GetKeyBtn.Text, GetKeyBtn.BackgroundColor3 = "GET KEY LINK", Color3.fromRGB(45, 45, 45)
-GetKeyBtn.TextColor3, GetKeyBtn.Font = Color3.new(0.8, 0.8, 0.8), Enum.Font.Gotham
-Instance.new("UICorner", GetKeyBtn)
-
--- 2. MAIN ENGINE LAUNCHER
+-- 2. MAIN ENGINE
 function LaunchJozex()
-    -- Load Rayfield with Error Handling
-    local success, Rayfield = pcall(function()
-        return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-    end)
-    
-    if not success or not Rayfield then 
-        warn("Jozex Hub: Failed to load Rayfield Library. Check Internet Connection.")
-        return 
-    end
-
-    local JozexOverlay = Instance.new("ScreenGui", game.CoreGui)
-    
-    -- DRAGGABLE CLICKER WIDGET
-    local ClickerFrame = Instance.new("Frame", JozexOverlay)
-    ClickerFrame.Size, ClickerFrame.Position = UDim2.new(0, 140, 0, 80), UDim2.new(0.1, 0, 0.2, 0)
-    ClickerFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    ClickerFrame.Active, ClickerFrame.Draggable, ClickerFrame.Visible = true, true, false
-    Instance.new("UICorner", ClickerFrame)
-
-    local ClickBtn = Instance.new("TextButton", ClickerFrame)
-    ClickBtn.Size, ClickBtn.Position = UDim2.new(0.8, 0, 0, 40), UDim2.new(0.1, 0, 0.3, 0)
-    ClickBtn.Text, ClickBtn.BackgroundColor3 = "CLICKER: OFF", Color3.fromRGB(200, 50, 50)
-    ClickBtn.TextColor3, ClickBtn.Font = Color3.new(1,1,1), Enum.Font.GothamBold
-    Instance.new("UICorner", ClickBtn)
-
-    local Window = Rayfield:CreateWindow({
-        Name = "Jozex Hub | BSS",
-        LoadingTitle = "Omni-Nav Systems Online",
-        ConfigurationSaving = {Enabled = false}
-    })
+    -- Switch to Kavo Library (Highly stable, fast loading)
+    local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+    local Window = Library.CreateLib("Jozex Hub | BSS", "DarkTheme")
 
     local Player = game.Players.LocalPlayer
     local PathfindingService = game:GetService("PathfindingService")
     local RunService = game:GetService("RunService")
-    _G.AutoFarm, _G.WS_Value, _G.InternalClicker
+    _G.AutoFarm, _G.SelectedField, _G.WS_Value = false, "Clover Field", 16
+
+    -- [ SMART BOX DETECTOR ]
+    local function SmartMove(targetPos)
+        local char = Player.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        
+        local overlapParams = OverlapParams.new()
+        overlapParams.FilterDescendantsInstances = {char, game.Workspace.Collectibles, game.Workspace.FlowerZones}
+        overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+
+        -- Detector Box: 3 studs in front, 4x6x4 dimensions
+        local sensorCFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3) 
+        local hits = game.Workspace:GetPartBoundsInBox(sensorCFrame, Vector3.new(4, 6, 4), overlapParams)
+
+        if #hits > 0 then
+            local path = PathfindingService:CreatePath({AgentRadius = 3, AgentCanJump = true})
+            path:ComputeAsync(char.HumanoidRootPart.Position, targetPos)
+            if path.Status == Enum.PathStatus.Success then
+                local waypoints = path:GetWaypoints()
+                if waypoints[2] then
+                    char.Humanoid:MoveTo(waypoints[2].Position)
+                    if waypoints[2].Action == Enum.PathWaypointAction.Jump then char.Humanoid.Jump = true end
+                end
+            end
+        else
+            char.Humanoid:MoveTo(targetPos)
+        end
+    end
+
+    -- TABS
+    local FarmTab = Window:NewTab("Auto-Farm")
+    local FarmSection = FarmTab:NewSection("Field Farming")
+
+    FarmSection:NewDropdown("Select Field", "Choose a field to farm", {"Sunflower Field", "Clover Field", "Mushroom Field", "Spider Field", "Bamboo Field", "Pineapple Patch", "Pumpkin Patch", "Rose Field", "Pine Tree Forest", "Mountain Top Field"}, function(s)
+        _G.SelectedField = s
+    end)
+
+    FarmSection:NewToggle("Omni-Farm (No Stop)", "Farms tokens instantly", function(v)
+        _G.AutoFarm = v
+        if v then
+            task.spawn(function()
+                while _G.AutoFarm do
+                    RunService.Heartbeat:Wait()
+                    local char = Player.Character
+                    local stats = Player:FindFirstChild("CoreStats")
+                    if char and stats and char:FindFirstChild("HumanoidRootPart") then
+                        local field = game.Workspace.FlowerZones:FindFirstChild(_G.SelectedField)
+                        
+                        -- Pollen Check
+                        if (stats.Pollen.Value / stats.Capacity.Value) >= 0.95 then
+                            SmartMove(Player.SpawnPos.Value.Position)
+                            if (char.HumanoidRootPart.Position - Player.SpawnPos.Value.Position).Magnitude < 10 then
+                                game:GetService("ReplicatedStorage").Events.PlayerHiveCommand:FireServer("ToggleMakeHoney")
+                                repeat task.wait(0.5) until stats.Pollen.Value == 0 or not _G.AutoFarm
+                            end
+                        -- Token Grab
+                        elseif field then
+                            local nt = nil; local ld = math.huge
+                            for _, t in pairs(game.Workspace.Collectibles:GetChildren()) do
+                                if t:IsA("BasePart") and (t.Position - field.Position).Magnitude < 65 then
+                                    local d = (t.Position - char.HumanoidRootPart.Position).Magnitude
+                                    if d < ld then nt = t; ld = d end
+                                end
+                            end
+                            if nt then SmartMove(nt.Position) else SmartMove(field.Position) end
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+
+    local MiscTab = Window:NewTab("Misc")
+    local MiscSection = MiscTab:NewSection("Player")
     
+    MiscSection:NewSlider("WalkSpeed", "Default is 16", 60, 16, function(s)
+        _G.WS_Value = s
+        if Player.Character then Player.Character.Humanoid.WalkSpeed = s end
+    end)
+
+    -- AUTO CLICKER (Integrated)
+    MiscSection:NewToggle("Internal Auto-Clicker", "Clicks your tool automatically", function(v)
+        _G.AutoClicker = v
+        task.spawn(function()
+            while _G.AutoClicker do
+                task.wait(0.05)
+                if Player.Character then
+                    local tool = Player.Character:FindFirstChildOfClass("Tool")
+                    if tool then tool:Activate() end
+                end
+            end
+        end)
+    end)
+end
+
+-- BUTTONS
+LoginBtn.MouseButton1Click:Connect(function()
+    if KeyBox.Text == CorrectKey then
+        LoginScreen:Destroy()
+        LaunchJozex()
+    else
+        LoginBtn.Text = "WRONG KEY"
+        task.wait(1)
+        LoginBtn.Text = "LOGIN"
+    end
+end)
