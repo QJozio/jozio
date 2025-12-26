@@ -1,46 +1,26 @@
--- [[ JOZEX HUB | DIRECT-LOAD UNIVERSAL ]] --
+-- [[ JOZEX HUB | WEEKEND FREE-ACCESS BUILD ]] --
 repeat task.wait() until game:IsLoaded()
 
+-- 1. WEEKEND CHECK LOGIC
+local function IsWeekend()
+    local date = os.date("!*t") -- Get UTC time
+    local day = date.wday -- 1 is Sunday, 7 is Saturday
+    return (day == 1 or day == 7)
+end
+
 local CorrectKey = "Jozex-on-top"
-local KeyLink = "Https://direct-link.net/2552546/CxGwpvRqOVJH"
 
--- 1. AUTHENTICATION UI
-local LoginScreen = Instance.new("ScreenGui", game.CoreGui)
-local Main = Instance.new("Frame", LoginScreen)
-Main.Size, Main.Position = UDim2.new(0, 280, 0, 180), UDim2.new(0.5, -140, 0.5, -90)
-Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Main.Active, Main.Draggable = true, true
-Instance.new("UICorner", Main)
-
-local Title = Instance.new("TextLabel", Main)
-Title.Size, Title.Text = UDim2.new(1, 0, 0, 40), "JOZEX HUB LOGIN"
-Title.TextColor3, Title.BackgroundTransparency = Color3.new(1,1,1), 1
-Title.Font = Enum.Font.GothamBold
-
-local KeyBox = Instance.new("TextBox", Main)
-KeyBox.Size, KeyBox.Position = UDim2.new(0.8, 0, 0, 35), UDim2.new(0.1, 0, 0.35, 0)
-KeyBox.PlaceholderText, KeyBox.Text = "Paste Key...", ""
-KeyBox.BackgroundColor3, KeyBox.TextColor3 = Color3.fromRGB(35, 35, 35), Color3.new(1,1,1)
-Instance.new("UICorner", KeyBox)
-
-local LoginBtn = Instance.new("TextButton", Main)
-LoginBtn.Size, LoginBtn.Position = UDim2.new(0.8, 0, 0, 40), UDim2.new(0.1, 0, 0.65, 0)
-LoginBtn.Text, LoginBtn.BackgroundColor3 = "LOGIN", Color3.fromRGB(0, 150, 255)
-LoginBtn.TextColor3, LoginBtn.Font = Color3.new(1,1,1), Enum.Font.GothamBold
-Instance.new("UICorner", LoginBtn)
-
--- 2. MAIN ENGINE
+-- 2. ENGINE LAUNCHER
 function LaunchJozex()
-    -- Switch to Kavo Library (Highly stable, fast loading)
     local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-    local Window = Library.CreateLib("Jozex Hub | BSS", "DarkTheme")
+    local Window = Library.CreateLib("Jozex Hub | BSS (Weekend Free)", "DarkTheme")
 
     local Player = game.Players.LocalPlayer
     local PathfindingService = game:GetService("PathfindingService")
     local RunService = game:GetService("RunService")
     _G.AutoFarm, _G.SelectedField, _G.WS_Value = false, "Clover Field", 16
 
-    -- [ SMART BOX DETECTOR ]
+    -- [ OMNI-DETECTOR SENSOR ]
     local function SmartMove(targetPos)
         local char = Player.Character
         if not char or not char:FindFirstChild("HumanoidRootPart") then return end
@@ -70,13 +50,13 @@ function LaunchJozex()
 
     -- TABS
     local FarmTab = Window:NewTab("Auto-Farm")
-    local FarmSection = FarmTab:NewSection("Field Farming")
+    local FarmSection = FarmTab:NewSection("Main Farm")
 
-    FarmSection:NewDropdown("Select Field", "Choose a field to farm", {"Sunflower Field", "Clover Field", "Mushroom Field", "Spider Field", "Bamboo Field", "Pineapple Patch", "Pumpkin Patch", "Rose Field", "Pine Tree Forest", "Mountain Top Field"}, function(s)
+    FarmSection:NewDropdown("Select Field", "Where to farm", {"Sunflower Field", "Clover Field", "Mushroom Field", "Spider Field", "Bamboo Field", "Pineapple Patch", "Pumpkin Patch", "Rose Field", "Pine Tree Forest", "Mountain Top Field"}, function(s)
         _G.SelectedField = s
     end)
 
-    FarmSection:NewToggle("Omni-Farm (No Stop)", "Farms tokens instantly", function(v)
+    FarmSection:NewToggle("Omni-Farm (Instant)", "Zero delay between tokens", function(v)
         _G.AutoFarm = v
         if v then
             task.spawn(function()
@@ -87,14 +67,14 @@ function LaunchJozex()
                     if char and stats and char:FindFirstChild("HumanoidRootPart") then
                         local field = game.Workspace.FlowerZones:FindFirstChild(_G.SelectedField)
                         
-                        -- Pollen Check
+                        -- Pollen Management
                         if (stats.Pollen.Value / stats.Capacity.Value) >= 0.95 then
                             SmartMove(Player.SpawnPos.Value.Position)
                             if (char.HumanoidRootPart.Position - Player.SpawnPos.Value.Position).Magnitude < 10 then
                                 game:GetService("ReplicatedStorage").Events.PlayerHiveCommand:FireServer("ToggleMakeHoney")
                                 repeat task.wait(0.5) until stats.Pollen.Value == 0 or not _G.AutoFarm
                             end
-                        -- Token Grab
+                        -- Token Logic
                         elseif field then
                             local nt = nil; local ld = math.huge
                             for _, t in pairs(game.Workspace.Collectibles:GetChildren()) do
@@ -112,15 +92,14 @@ function LaunchJozex()
     end)
 
     local MiscTab = Window:NewTab("Misc")
-    local MiscSection = MiscTab:NewSection("Player")
+    local MiscSection = MiscTab:NewSection("Draggable Widget & Controls")
     
-    MiscSection:NewSlider("WalkSpeed", "Default is 16", 60, 16, function(s)
+    MiscSection:NewSlider("WalkSpeed", "Fast travel", 60, 16, function(s)
         _G.WS_Value = s
         if Player.Character then Player.Character.Humanoid.WalkSpeed = s end
     end)
 
-    -- AUTO CLICKER (Integrated)
-    MiscSection:NewToggle("Internal Auto-Clicker", "Clicks your tool automatically", function(v)
+    MiscSection:NewToggle("Auto-Clicker", "Automatic tool usage", function(v)
         _G.AutoClicker = v
         task.spawn(function()
             while _G.AutoClicker do
@@ -134,14 +113,34 @@ function LaunchJozex()
     end)
 end
 
--- BUTTONS
-LoginBtn.MouseButton1Click:Connect(function()
-    if KeyBox.Text == CorrectKey then
-        LoginScreen:Destroy()
-        LaunchJozex()
-    else
-        LoginBtn.Text = "WRONG KEY"
-        task.wait(1)
-        LoginBtn.Text = "LOGIN"
-    end
-end)
+-- 3. EXECUTION LOGIC (The Switch)
+if IsWeekend() then
+    print("Jozex Hub: Weekend detected! Skipping key system.")
+    LaunchJozex()
+else
+    -- Standard Login UI for Weekdays
+    local LoginScreen = Instance.new("ScreenGui", game.CoreGui)
+    local Main = Instance.new("Frame", LoginScreen)
+    Main.Size, Main.Position = UDim2.new(0, 280, 0, 180), UDim2.new(0.5, -140, 0.5, -90)
+    Main.BackgroundColor3, Main.Active, Main.Draggable = Color3.fromRGB(20, 20, 20), true, true
+    Instance.new("UICorner", Main)
+
+    local KeyBox = Instance.new("TextBox", Main)
+    KeyBox.Size, KeyBox.Position = UDim2.new(0.8, 0, 0, 35), UDim2.new(0.1, 0, 0.3, 0)
+    KeyBox.PlaceholderText, KeyBox.BackgroundColor3 = "Enter Key...", Color3.fromRGB(35, 35, 35)
+    KeyBox.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", KeyBox)
+
+    local LoginBtn = Instance.new("TextButton", Main)
+    LoginBtn.Size, LoginBtn.Position = UDim2.new(0.8, 0, 0, 40), UDim2.new(0.1, 0, 0.6, 0)
+    LoginBtn.Text, LoginBtn.BackgroundColor3 = "LOGIN", Color3.fromRGB(0, 150, 255)
+    LoginBtn.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", LoginBtn)
+
+    LoginBtn.MouseButton1Click:Connect(function()
+        if KeyBox.Text == CorrectKey then
+            LoginScreen:Destroy()
+            LaunchJozex()
+        end
+    end)
+end
