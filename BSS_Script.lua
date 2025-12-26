@@ -1,29 +1,32 @@
--- [[ JOZEX HUB | AIMBOT ASSISTANT 2025 ]] --
+-- [[ JOZEX HUB | AIMBOT ASSISTANT + FOV ]] --
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
    Name = "JOZEX HUB | BETA",
    LoadingTitle = "Aimbot Assistant",
    LoadingSubtitle = "by QJozio",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "JozexConfigs",
-      FileName = "Universal"
-   },
-   KeySystem = false
+   ConfigurationSaving = {Enabled = true, FolderName = "JozexConfigs", FileName = "Universal"}
 })
 
--- [[ SETTINGS & VARIABLES ]] --
+-- [[ SETTINGS & VISUALS ]] --
 local Settings = {
     Aimbot = false,
     TeamCheck = true,
     Smoothing = 0.5,
     FOV = 150,
     WalkSpeed = 16,
-    JumpPower = 50
+    JumpPower = 50,
+    FOVVisible = true
 }
 
--- Movement Loop (WalkSpeed & JumpPower)
+-- Create the Drawing Circle
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 1.5
+FOVCircle.Color = Color3.fromRGB(255, 255, 255)
+FOVCircle.Transparency = 1
+FOVCircle.Filled = false
+
+-- Movement Loop
 task.spawn(function()
     while task.wait() do
         pcall(function()
@@ -35,7 +38,7 @@ task.spawn(function()
     end
 end)
 
--- Aimbot Logic
+-- Aimbot Target Logic
 local function GetTarget()
     local target = nil
     local dist = Settings.FOV
@@ -52,7 +55,14 @@ local function GetTarget()
     return target
 end
 
+-- Update Loop (FOV Position & Aimbot)
 game:GetService("RunService").RenderStepped:Connect(function()
+    -- Update Circle Visuals
+    FOVCircle.Visible = Settings.FOVVisible
+    FOVCircle.Radius = Settings.FOV
+    FOVCircle.Position = game:GetService("UserInputService"):GetMouseLocation()
+
+    -- Aimbot Execution
     if Settings.Aimbot and game:GetService("UserInputService"):IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
         local t = GetTarget()
         if t then
@@ -71,9 +81,16 @@ MainTab:CreateToggle({
    Callback = function(v) Settings.Aimbot = v end,
 })
 MainTab:CreateToggle({
-   Name = "Team Check",
+   Name = "Show FOV Circle",
    CurrentValue = true,
-   Callback = function(v) Settings.TeamCheck = v end,
+   Callback = function(v) Settings.FOVVisible = v end,
+})
+MainTab:CreateSlider({
+   Name = "FOV Size",
+   Range = {50, 800},
+   Increment = 10,
+   CurrentValue = 150,
+   Callback = function(v) Settings.FOV = v end,
 })
 MainTab:CreateSlider({
    Name = "Smoothness",
@@ -91,17 +108,5 @@ MainTab:CreateSlider({
    CurrentValue = 16,
    Callback = function(v) Settings.WalkSpeed = v end,
 })
-MainTab:CreateSlider({
-   Name = "Jump Power",
-   Range = {50, 500},
-   Increment = 1,
-   CurrentValue = 50,
-   Callback = function(v) Settings.JumpPower = v end,
-})
 
--- SUCCESS NOTIFICATION
-Rayfield:Notify({
-   Title = "Success!",
-   Content = "Jozex Hub has loaded all features.",
-   Duration = 5
-})
+Rayfield:Notify({Title = "Success!", Content = "Aimbot Assistant Loaded", Duration = 5})
