@@ -1,13 +1,14 @@
--- [[ JOZEX HUB | ZERO-LATENCY OMNI-DETECTOR ]] --
+-- [[ JOZEX HUB | DRAGGABLE AUTH + INSTANT CLICKER ]] --
 local CorrectKey = "Jozex-on-top"
 local KeyLink = "Https://direct-link.net/2552546/CxGwpvRqOVJH"
 
--- 1. AUTH UI
+-- 1. DRAGGABLE AUTH UI
 local LoginScreen = Instance.new("ScreenGui", game.CoreGui)
 local Main = Instance.new("Frame", LoginScreen)
 Main.Size, Main.Position = UDim2.new(0, 300, 0, 220), UDim2.new(0.5, -150, 0.5, -110)
 Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Main.Active, Main.Draggable = true, true
+Main.Active = true
+Main.Draggable = true -- Makes the Login window draggable
 Instance.new("UICorner", Main)
 
 local KeyBox = Instance.new("TextBox", Main)
@@ -26,10 +27,12 @@ Instance.new("UICorner", LoginBtn)
 function LaunchJozex()
     local JozexOverlay = Instance.new("ScreenGui", game.CoreGui)
     
-    -- [ FLOATING CLICKER ]
+    -- [ DRAGGABLE AUTO CLICKER WIDGET ]
     local ClickerFrame = Instance.new("Frame", JozexOverlay)
     ClickerFrame.Size, ClickerFrame.Position = UDim2.new(0, 140, 0, 80), UDim2.new(0.1, 0, 0.2, 0)
-    ClickerFrame.BackgroundColor3, ClickerFrame.Active, ClickerFrame.Draggable = Color3.fromRGB(20, 20, 20), true, true
+    ClickerFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    ClickerFrame.Active = true
+    ClickerFrame.Draggable = true -- Makes the Clicker widget draggable
     ClickerFrame.Visible = false
     Instance.new("UICorner", ClickerFrame)
 
@@ -48,22 +51,20 @@ function LaunchJozex()
     _G.AutoFarm, _G.WS_Value, _G.InternalClicker = false, 16, false
     _G.SelectedField = "Clover Field"
 
-    -- [ THE OMNI-DETECTOR (NO DELAY VERSION) ]
+    -- SMART MOVEMENT (Box Scanning)
     local function GetSmartPath(targetPos)
         local char = Player.Character
         if not char or not char:FindFirstChild("HumanoidRootPart") then return end
         local root = char.HumanoidRootPart
         
-        -- Spatial Query Box Check
         local overlapParams = OverlapParams.new()
         overlapParams.FilterDescendantsInstances = {char, game.Workspace.Collectibles, game.Workspace.FlowerZones, game.Workspace.Monsters}
         overlapParams.FilterType = Enum.RaycastFilterType.Exclude
 
-        local sensorCFrame = root.CFrame * CFrame.new(0, 0, -3) -- Detects 3 studs ahead
+        local sensorCFrame = root.CFrame * CFrame.new(0, 0, -3) 
         local objectsInWay = game.Workspace:GetPartBoundsInBox(sensorCFrame, Vector3.new(3, 5, 3), overlapParams)
 
         if #objectsInWay > 0 then
-            -- Pathfind instantly around wall
             local path = PathfindingService:CreatePath({AgentRadius = 3, AgentCanJump = true})
             path:ComputeAsync(root.Position, targetPos)
             if path.Status == Enum.PathStatus.Success then
@@ -74,7 +75,6 @@ function LaunchJozex()
                 end
             end
         else
-            -- Straight line (Zero delay)
             char.Humanoid:MoveTo(targetPos)
         end
     end
@@ -104,23 +104,20 @@ function LaunchJozex()
         Callback = function(Value)
             _G.AutoFarm = Value
             if Value then
-                -- RUN ON HEARTBEAT FOR INSTANT MOVEMENT
                 task.spawn(function()
                     while _G.AutoFarm do
-                        RunService.Heartbeat:Wait()
+                        RunService.Heartbeat:Wait() -- Runs every frame for instant token transitions
                         local char = Player.Character
                         local stats = Player:FindFirstChild("CoreStats")
                         if char and stats and char:FindFirstChild("HumanoidRootPart") then
                             local field = game.Workspace.FlowerZones:FindFirstChild(_G.SelectedField)
                             
-                            -- 1. HIVE LOGIC
                             if (stats.Pollen.Value / stats.Capacity.Value) >= 0.95 then
                                 GetSmartPath(Player.SpawnPos.Value.Position)
                                 if (char.HumanoidRootPart.Position - Player.SpawnPos.Value.Position).Magnitude < 10 then
                                     game:GetService("ReplicatedStorage").Events.PlayerHiveCommand:FireServer("ToggleMakeHoney")
                                     repeat task.wait(0.5) until stats.Pollen.Value == 0 or not _G.AutoFarm
                                 end
-                            -- 2. INSTANT TOKEN CHASE
                             elseif field then
                                 local nt = nil; local ld = math.huge
                                 for _, t in pairs(game.Workspace.Collectibles:GetChildren()) do
@@ -129,22 +126,7 @@ function LaunchJozex()
                                         if d < ld then nt = t; ld = d end
                                     end
                                 end
-                                if nt then 
-                                    GetSmartPath(nt.Position) 
-                                else 
-                                    GetSmartPath(field.Position) 
-                                end
+                                if nt then GetSmartPath(nt.Position) else GetSmartPath(field.Position) end
                             end
-                        end
-                    end
-                end)
-            end
-        end
-    })
-
-    local MiscTab = Window:CreateTab("Misc", 4483362458)
-    MiscTab:CreateToggle({Name = "Auto-Clicker Widget", Callback = function(v) ClickerFrame.Visible = v end})
-    MiscTab:CreateSlider({Name = "Speed", Range = {16, 60}, Increment = 1, CurrentValue = 16, Callback = function(v) if Player.Character then Player.Character.Humanoid.WalkSpeed = v end end})
-end
-
-LoginBtn.MouseButton1Click:Connect(function() if KeyBox.Text == CorrectKey then LoginScreen:Destroy(); LaunchJozex() end end)
+                                end
+                             localal
