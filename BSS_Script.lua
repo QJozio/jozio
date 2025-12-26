@@ -1,11 +1,12 @@
--- [[ QJOZIO HUB: ATLAS SOURCE + FIXED CALLBACK ]] --
+-- [[ QJOZIO HUB: ATLAS SOURCE + STABLE KEY SYSTEM ]] --
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- KEY CONFIGURATION
 local CorrectKey = "QJOZIO-ON-TOP"
 local KeyLink = "https://direct-link.net/2552546/CxGwpvRqOVJH"
+local TypedKey = "" -- Stores what you type
 
--- 1. DEFINE ENGINE FIRST (To prevent Callback Error)
+-- 1. DEFINE ENGINE (The actual script)
 local function loadAtlasEngine()
     local MainWin = Rayfield:CreateWindow({
        Name = "QJozio Hub | THE TOTAL ATLAS",
@@ -16,7 +17,7 @@ local function loadAtlasEngine()
 
     local LP = game.Players.LocalPlayer
     local RS = game:GetService("ReplicatedStorage")
-    local _G = {Farm = false, Magnet = false, Mobs = false, Sprinklers = false}
+    local _G = {Farm = false, Magnet = false, Mobs = false}
     local selectedField = "Dandelion"
     local Fields = {
         ["Dandelion"] = Vector3.new(-30, 5, 225), ["Sunflower"] = Vector3.new(-210, 5, 185),
@@ -37,12 +38,11 @@ local function loadAtlasEngine()
 
     task.spawn(function()
         local angle = 0
-        while task.wait(0.001) do
-            if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then continue end
-            local root = LP.Character.HumanoidRootPart
-            
-            if _G.Farm then
+        while task.wait(0.01) do
+            if _G.Farm and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+                local root = LP.Character.HumanoidRootPart
                 local stats = LP:WaitForChild("CoreStats")
+                
                 if stats.Pollen.Value >= stats.Capacity.Value * 0.99 then
                     root.CFrame = LP.SpawnPos.Value * CFrame.new(0, 2, 0)
                     RS.Events.PlayerHiveCommand:FireServer("ToggleHoneyMaking")
@@ -62,11 +62,10 @@ local function loadAtlasEngine()
                     if LP.Character:FindFirstChildOfClass("Tool") then LP.Character:FindFirstChildOfClass("Tool"):Activate() end
                 end
             end
-
-            if _G.Mobs then
+            if _G.Mobs and LP.Character:FindFirstChild("HumanoidRootPart") then
                 for _, mob in pairs(workspace.Monsters:GetChildren()) do
-                    if mob:FindFirstChild("HumanoidRootPart") and (mob.HumanoidRootPart.Position - root.Position).Magnitude < 80 then
-                        root.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 22, 0)
+                    if mob:FindFirstChild("HumanoidRootPart") and (mob.HumanoidRootPart.Position - LP.Character.HumanoidRootPart.Position).Magnitude < 80 then
+                        LP.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 22, 0)
                     end
                 end
             end
@@ -78,7 +77,7 @@ end
 local Window = Rayfield:CreateWindow({
    Name = "QJozio Hub | Verification",
    LoadingTitle = "Authenticating...",
-   LoadingSubtitle = "Checking Key Status",
+   LoadingSubtitle = "Stable Key System",
    ConfigurationSaving = {Enabled = false}
 })
 
@@ -86,16 +85,23 @@ local KeyTab = Window:CreateTab("Key System", 4483362458)
 
 KeyTab:CreateInput({
    Name = "Enter Key",
-   PlaceholderText = "Input Key...",
+   PlaceholderText = "Paste Key Here...",
    RemoveTextAfterFocusLost = false,
    Callback = function(Text)
-       if string.upper(Text) == CorrectKey then
-           Rayfield:Notify({Title = "Success!", Content = "Access Granted!", Duration = 3})
+       TypedKey = Text -- Just store the text, don't check yet
+   end,
+})
+
+KeyTab:CreateButton({
+   Name = "Submit Key",
+   Callback = function()
+       if TypedKey == CorrectKey or TypedKey:match(CorrectKey) then
+           Rayfield:Notify({Title = "SUCCESS", Content = "Access Granted! Loading...", Duration = 3})
            task.wait(0.5)
            Window:Destroy() 
            loadAtlasEngine() 
        else
-           Rayfield:Notify({Title = "Incorrect Key", Content = "The key you entered is invalid.", Duration = 3})
+           Rayfield:Notify({Title = "ERROR", Content = "Invalid Key! Please try again.", Duration = 3})
        end
    end,
 })
@@ -104,6 +110,6 @@ KeyTab:CreateButton({
    Name = "Copy Key Link",
    Callback = function()
        setclipboard(KeyLink)
-       Rayfield:Notify({Title = "Copied!", Content = "Link copied to clipboard!", Duration = 3})
+       Rayfield:Notify({Title = "Copied", Content = "Paste link into browser", Duration = 3})
    end,
 })
