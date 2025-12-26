@@ -1,21 +1,35 @@
--- [[ QJOZIO HUB: ULTRA-STABLE LOAD ]] --
-print("QJozio Hub is attempting to load...")
-
+-- [[ QJOZIO HUB: FINAL INTEGRATED MASTER ]] --
 repeat task.wait() until game:IsLoaded()
 local LP = game.Players.LocalPlayer
 
--- 1. INTERNAL UI LIBRARY (Fixed for Mobile)
+-- Notification Function
+local function Notify(text)
+    local sg = Instance.new("ScreenGui", game.CoreGui)
+    local frame = Instance.new("Frame", sg)
+    frame.Size = UDim2.new(0, 200, 0, 50)
+    frame.Position = UDim2.new(0.5, -100, 0.1, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    Instance.new("UICorner", frame)
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Text = text
+    label.TextColor3 = Color3.new(1, 1, 1)
+    label.BackgroundTransparency = 1
+    game:GetService("Debris"):AddItem(sg, 3)
+end
+
+Notify("QJozio Hub Loading...")
+
+-- 1. INTERNAL UI LIBRARY
 local QJozioLib = {}
 function QJozioLib:CreateWindow(Name)
     local sg = Instance.new("ScreenGui", game.CoreGui)
-    sg.Name = "QJozioGui"
-    
     local Main = Instance.new("Frame", sg)
     Main.Size = UDim2.new(0, 380, 0, 220)
     Main.Position = UDim2.new(0.5, -190, 0.5, -110)
     Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     Main.Active = true
-    Main.Draggable = true -- Simple drag for mobile
+    Main.Draggable = true
     Instance.new("UICorner", Main)
 
     local TabSide = Instance.new("Frame", Main)
@@ -49,7 +63,6 @@ function QJozioLib:CreateWindow(Name)
             P.Visible = true
         end)
         
-        -- Default visibility fix
         if #TabSide:GetChildren() == 2 then P.Visible = true end
 
         local Elm = {}
@@ -73,21 +86,51 @@ function QJozioLib:CreateWindow(Name)
     return Hub
 end
 
--- 2. INITIALIZE
+-- 2. DATA & ENGINE
+local farmOn, tokensOn = false, true
+local Fields = {
+    ["Dandelion"] = Vector3.new(-30, 5, 225),
+    ["Sunflower"] = Vector3.new(-210, 5, 185),
+    ["Pine Tree"] = Vector3.new(-315, 70, -215)
+}
+
+-- 3. INITIALIZE
 local MyHub = QJozioLib:CreateWindow("QJozio Hub")
 local Farm = MyHub:CreateTab("Farm")
-local farmOn = false
+local Combat = MyHub:CreateTab("Combat")
 
-Farm:AddToggle("Auto Farm", function(v) farmOn = v end)
+Farm:AddToggle("Master Farm", function(v) farmOn = v end)
+Farm:AddToggle("Collect Tokens", function(v) tokensOn = v end)
+Combat:AddToggle("Auto-Kill Mobs", function(v) _G.KillMobs = v end)
 
--- 3. SIMPLE LOOP
+-- 4. THE LOOP
 task.spawn(function()
-    while task.wait(0.1) do
+    local angle = 0
+    while task.wait(0.05) do
         if farmOn and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            local tool = LP.Character:FindFirstChildOfClass("Tool")
-            if tool then tool:Activate() end
+            local hum = LP.Character.Humanoid
+            local stats = LP:WaitForChild("CoreStats")
+            
+            if stats.Pollen.Value >= stats.Capacity.Value * 0.95 then
+                hum:MoveTo(LP.SpawnPos.Value.Position)
+            else
+                local target = nil
+                if tokensOn then
+                    for _, v in pairs(workspace.Collectibles:GetChildren()) do
+                        if (v.Position - LP.Character.HumanoidRootPart.Position).Magnitude < 50 then target = v break end
+                    end
+                end
+                
+                if target then
+                    hum:MoveTo(target.Position)
+                else
+                    angle = angle + 0.3
+                    hum:MoveTo(Fields["Dandelion"] + Vector3.new(math.sin(angle)*30, 0, math.cos(angle)*30))
+                end
+                if LP.Character:FindFirstChildOfClass("Tool") then LP.Character:FindFirstChildOfClass("Tool"):Activate() end
+            end
         end
     end
 end)
 
-print("QJozio Hub Loaded Successfully!")
+Notify("QJozio Hub: SUCCESS!")
