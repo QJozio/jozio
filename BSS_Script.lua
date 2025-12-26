@@ -1,4 +1,4 @@
--- [[ JOZEX HUB | CUSTOM TABBED UI ]] --
+            -- [[ JOZEX HUB | CUSTOM TABBED UI ]] --
 repeat task.wait() until game:IsLoaded()
 
 local Player = game.Players.LocalPlayer
@@ -123,5 +123,74 @@ local function SmartMove(targetPos)
         local path = PathfindingService:CreatePath({AgentRadius = 3, AgentCanJump = true})
         path:ComputeAsync(char.HumanoidRootPart.Position, targetPos)
         if path.Status == Enum.PathStatus.Success then
-            local waypoints = path
-            
+            local waypoints = path:GetWaypoints()
+            if waypoints[2] then
+                char.Humanoid:MoveTo(waypoints[2].Position)
+                if waypoints[2].Action == Enum.PathWaypointAction.Jump then char.Humanoid.Jump = true end
+            end
+        end
+    else
+        char.Humanoid:MoveTo(targetPos)
+    end
+end
+
+-- 5. POPULATE TABS
+CreateLabel(FarmTab, "FIELD SELECTION")
+local FieldInput = Instance.new("TextBox", FarmTab)
+FieldInput.Size = UDim2.new(0.9, 0, 0, 35)
+FieldInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+FieldInput.Text = "Clover Field"
+FieldInput.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", FieldInput)
+FieldInput.FocusLost:Connect(function() _G.SelectedField = FieldInput.Text end)
+
+CreateToggle(FarmTab, "Omni-Auto Farm", function(v)
+    _G.AutoFarm = v
+    task.spawn(function()
+        while _G.AutoFarm do
+            RunService.Heartbeat:Wait()
+            local char = Player.Character
+            local stats = Player:FindFirstChild("CoreStats")
+            if char and stats and char:FindFirstChild("HumanoidRootPart") then
+                local field = game.Workspace.FlowerZones:FindFirstChild(_G.SelectedField)
+                if (stats.Pollen.Value / stats.Capacity.Value) >= 0.95 then
+                    SmartMove(Player.SpawnPos.Value.Position)
+                    if (char.HumanoidRootPart.Position - Player.SpawnPos.Value.Position).Magnitude < 10 then
+                        game:GetService("ReplicatedStorage").Events.PlayerHiveCommand:FireServer("ToggleMakeHoney")
+                        repeat task.wait(0.5) until stats.Pollen.Value == 0 or not _G.AutoFarm
+                    end
+                elseif field then
+                    local nt = nil; local ld = math.huge
+                    for _, t in pairs(game.Workspace.Collectibles:GetChildren()) do
+                        if t:IsA("BasePart") and (t.Position - field.Position).Magnitude < 65 then
+                            local d = (t.Position - char.HumanoidRootPart.Position).Magnitude
+                            if d < ld then nt = t; ld = d end
+                        end
+                    end
+                    if nt then SmartMove(nt.Position) else SmartMove(field.Position) end
+                end
+            end
+        end
+    end)
+end)
+
+CreateToggle(MiscTab, "Auto Clicker", function(v)
+    _G.AutoClicker = v
+    task.spawn(function()
+        while _G.AutoClicker do
+            task.wait(0.05)
+            if Player.Character then
+                local tool = Player.Character:FindFirstChildOfClass("Tool")
+                if tool then tool:Activate() end
+            end
+        end
+    end)
+end)
+
+CreateToggle(MiscTab, "Fast Walkspeed", function(v)
+    if Player.Character then
+        Player.Character.Humanoid.WalkSpeed = v and 50 or 16
+    end
+end)
+
+print("Jozex Hub: Custom Tabbed UI Loaded.")
