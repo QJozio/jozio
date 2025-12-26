@@ -1,47 +1,12 @@
--- [[ QJOZIO HUB: ATLAS SOURCE + KEY SYSTEM FIXED ]] --
+-- [[ QJOZIO HUB: ATLAS SOURCE + FIXED CALLBACK ]] --
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- KEY CONFIGURATION
 local CorrectKey = "QJOZIO-ON-TOP"
 local KeyLink = "https://direct-link.net/2552546/CxGwpvRqOVJH"
 
-local Window = Rayfield:CreateWindow({
-   Name = "QJozio Hub | Verification",
-   LoadingTitle = "Authenticating...",
-   LoadingSubtitle = "by QJozio",
-   ConfigurationSaving = {Enabled = false}
-})
-
-local KeyTab = Window:CreateTab("Key System", 4483362458)
-
-KeyTab:CreateSection("Get the key here:")
-
-KeyTab:CreateButton({
-   Name = "Copy Key Link (Direct-Link)",
-   Callback = function()
-       setclipboard(KeyLink)
-       Rayfield:Notify({Title = "Copied!", Content = "Link copied to clipboard!", Duration = 5})
-   end,
-})
-
-KeyTab:CreateInput({
-   Name = "Enter Key",
-   PlaceholderText = "Input Key...",
-   RemoveTextAfterFocusLost = false,
-   Callback = function(Text)
-       if Text == CorrectKey then
-           Rayfield:Notify({Title = "Success!", Content = "Key Accepted. Loading Atlas Engine...", Duration = 5})
-           task.wait(1)
-           Window:Destroy() -- Closes Key Window
-           loadAtlasEngine() -- Unlocks the actual Atlas script logic
-       else
-           Rayfield:Notify({Title = "Incorrect Key", Content = "The key you entered is invalid.", Duration = 5})
-       end
-   end,
-})
-
--- THE "STOLEN" ATLAS ENGINE MODULE
-function loadAtlasEngine()
+-- 1. DEFINE ENGINE FIRST (To prevent Callback Error)
+local function loadAtlasEngine()
     local MainWin = Rayfield:CreateWindow({
        Name = "QJozio Hub | THE TOTAL ATLAS",
        LoadingTitle = "Engine Online",
@@ -108,3 +73,37 @@ function loadAtlasEngine()
         end
     end)
 end
+
+-- 2. CREATE KEY WINDOW
+local Window = Rayfield:CreateWindow({
+   Name = "QJozio Hub | Verification",
+   LoadingTitle = "Authenticating...",
+   LoadingSubtitle = "Checking Key Status",
+   ConfigurationSaving = {Enabled = false}
+})
+
+local KeyTab = Window:CreateTab("Key System", 4483362458)
+
+KeyTab:CreateInput({
+   Name = "Enter Key",
+   PlaceholderText = "Input Key...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+       if string.upper(Text) == CorrectKey then
+           Rayfield:Notify({Title = "Success!", Content = "Access Granted!", Duration = 3})
+           task.wait(0.5)
+           Window:Destroy() 
+           loadAtlasEngine() 
+       else
+           Rayfield:Notify({Title = "Incorrect Key", Content = "The key you entered is invalid.", Duration = 3})
+       end
+   end,
+})
+
+KeyTab:CreateButton({
+   Name = "Copy Key Link",
+   Callback = function()
+       setclipboard(KeyLink)
+       Rayfield:Notify({Title = "Copied!", Content = "Link copied to clipboard!", Duration = 3})
+   end,
+})
