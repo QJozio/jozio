@@ -1,12 +1,20 @@
--- [[ JOZEX INSTANT STAT ENGINE ]] --
+-- [[ JOZEX INSTANT STAT ENGINE - FIXED ]] --
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- Initialize
-local StartTime = tick() -- High precision timer
-local Stats = LocalPlayer:WaitForChild("CoreStats")
-local StartHoney = Stats.Honey.Value
-local StartPollen = Stats.Pollen.Value
+-- Wait for the character and stats folder to exist
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Stats = LocalPlayer:WaitForChild("CoreStats", 10) -- Safely waits up to 10 seconds
+
+if not Stats then
+    warn("JOZEX: CoreStats folder not found! Make sure you are in Bee Swarm Simulator.")
+    return
+end
+
+-- Initialize starting values
+local StartTime = tick()
+local StartHoney = Stats:WaitForChild("Honey").Value
+local StartPollen = Stats:WaitForChild("Pollen").Value
 
 -- Number Formatting (k, M, B, T)
 local function Format(n)
@@ -17,24 +25,30 @@ local function Format(n)
     else return tostring(math.floor(n)) end
 end
 
--- Calculation Function
+-- The Calculation Function
 local function Recalculate()
     local Elapsed = tick() - StartTime
-    if Elapsed < 1 then return end -- Prevent division by zero at start
+    if Elapsed < 1 then return end 
 
-    local GainedH = Stats.Honey.Value - StartHoney
-    local GainedP = Stats.Pollen.Value - StartPollen
+    local CurrentHoney = Stats.Honey.Value
+    local CurrentPollen = Stats.Pollen.Value
     
+    local GainedH = CurrentHoney - StartHoney
+    local GainedP = CurrentPollen - StartPollen
+    
+    -- Formula: (Gained / Seconds) * 3600
     local HPH = (GainedH / Elapsed) * 3600
     local PPH = (GainedP / Elapsed) * 3600
 
-    -- Instant Output to Console
-    print(string.format("[UPDATE] Session: %s Honey | Rate: %s/HR", Format(GainedH), Format(HPH)))
+    print("-------------------------------")
+    print("INSTANT UPDATE:")
+    print("Honey/HR:  " .. Format(HPH))
+    print("Pollen/HR: " .. Format(PPH))
+    print("Session:   " .. Format(GainedH) .. " Honey")
 end
 
--- [[ INSTANT TRIGGERS ]] --
--- This fires the second your Honey or Pollen changes in the game folder
+-- Connect to changes so it updates the moment stats move
 Stats.Honey.Changed:Connect(Recalculate)
 Stats.Pollen.Changed:Connect(Recalculate)
 
-print("--- INSTANT TRACKER LOADED: STATS WILL LOG ON CHANGE ---")
+print("--- JOZEX TRACKER: ACTIVE & WAITING FOR CHANGES ---")
