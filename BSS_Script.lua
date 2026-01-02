@@ -1,42 +1,45 @@
--- SIMPLE AUTO FISH (MACRO STYLE)
--- Toggle with F
+-- RAYFIELD LOAD
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
-local Players = game:GetService("Players")
-local VirtualUser = game:GetService("VirtualUser")
-local UserInputService = game:GetService("UserInputService")
+local Window = Rayfield:CreateWindow({
+    Name = "Fisch Auto Farm",
+    LoadingTitle = "Fisch",
+    LoadingSubtitle = "Auto Fish",
+    ConfigurationSaving = {
+        Enabled = false
+    },
+    Discord = { Enabled = false },
+    KeySystem = false
+})
 
-local player = Players.LocalPlayer
-local enabled = false
+local Tab = Window:CreateTab("Auto Farm", 4483362458)
 
--- TOGGLE KEY
-UserInputService.InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if input.KeyCode == Enum.KeyCode.F then
-        enabled = not enabled
-        print("🎣 Auto Fish:", enabled and "ON" or "OFF")
+getgenv().AutoFish = false
+
+Tab:CreateToggle({
+    Name = "Auto Fish",
+    CurrentValue = false,
+    Callback = function(Value)
+        getgenv().AutoFish = Value
+        print("🎣 AutoFish:", Value)
     end
-end)
+})
 
 -- MAIN LOOP
 task.spawn(function()
     while true do
-        task.wait(1)
+        task.wait(0.2)
 
-        if enabled then
+        if getgenv().AutoFish then
             -- CAST
-            VirtualUser:Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-            task.wait(0.2)
-            VirtualUser:Button1Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-
-            -- WAIT FOR BITE
-            task.wait(3) -- adjust if needed
+            mouse1click()
+            task.wait(3.5) -- wait for bite
 
             -- REEL
-            VirtualUser:Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-            task.wait(0.3)
-            VirtualUser:Button1Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-
+            mouse1click()
             task.wait(1.5)
         end
     end
 end)
+
+print("✅ Rayfield Fisch Auto Farm Loaded")
