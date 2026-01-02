@@ -1,83 +1,120 @@
--- [[ JOZEX HUB: FISCH FULL AUTO + AUTO-SELL ]] --
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Jozex Hub | Fisch Edition",
+   LoadingTitle = "Jozex Hub",
+   LoadingSubtitle = "by QJozio",
+   ConfigurationSaving = { Enabled = false },
+   Theme = "Default" -- We will customize colors via the Teal style
+})
+
+-- [[ VARIABLES ]] --
+getgenv().AutoFarm = false
+getgenv().AutoSell = false
+local FishCaught = 0
+
+-- [[ TABS ]] --
+local MainTab = Window:CreateTab("AutoFarm", 4483362458)
+local StatsTab = Window:CreateTab("Stats", 4483362458)
+
+-- [[ AUTOFARM TAB ]] --
+MainTab:CreateSection("Fishing Controls")
+
+MainTab:CreateToggle({
+   Name = "Full Auto Fish",
+   CurrentValue = false,
+   Flag = "AutoFish",
+   Callback = function(Value)
+      getgenv().AutoFarm = Value
+      if Value then
+          Rayfield:Notify({Title = "Jozex Hub", Content = "Auto-Fishing Started!", Duration = 2})
+      end
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Auto Sell (When Full)",
+   CurrentValue = false,
+   Flag = "AutoSell",
+   Callback = function(Value)
+      getgenv().AutoSell = Value
+   end,
+})
+
+MainTab:CreateSection("Settings")
+MainTab:CreateSlider({
+   Name = "Cast Strength",
+   Min = 50,
+   Max = 100,
+   Default = 100,
+   Color = Color3.fromRGB(0, 128, 128),
+   Callback = function(Value)
+      getgenv().CastStrength = Value
+   end,
+})
+
+-- [[ STATS TAB ]] --
+StatsTab:CreateSection("Session Info")
+local FishLabel = StatsTab:CreateLabel("Fish Caught: 0")
+
+-- [[ LOGIC: AUTO-FISHING ]] --
 local VirtualInputManager = game:GetService("VirtualInputManager")
-
--- CONFIG
-getgenv().AutoFarm = true
-getgenv().AutoSell = true
-
--- // 1. AUTO CAST //
-local function getRod()
-    return LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
-end
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local PlayerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
 task.spawn(function()
-    while getgenv().AutoFarm do
-        task.wait(1.5)
-        local rod = getRod()
-        if rod and not LocalPlayer.Character:FindFirstChild("FishingLine") then
-            rod:Activate()
-        end
-    end
-end)
-
--- // 2. AUTO SHAKE //
-task.spawn(function()
-    while getgenv().AutoFarm do
-        task.wait(0.01)
-        local shakeUI = PlayerGui:FindFirstChild("shakeui", true)
-        if shakeUI and shakeUI.Enabled then
-            local button = shakeUI:FindFirstChild("safezone", true):FindFirstChild("button", true)
-            if button and button.Visible then
-                VirtualInputManager:SendMouseButtonEvent(
-                    button.AbsolutePosition.X + (button.AbsoluteSize.X / 2),
-                    button.AbsolutePosition.Y + (button.AbsoluteSize.Y / 2),
-                    0, true, game, 1
-                )
-                VirtualInputManager:SendMouseButtonEvent(
-                    button.AbsolutePosition.X + (button.AbsoluteSize.X / 2),
-                    button.AbsolutePosition.Y + (button.AbsoluteSize.Y / 2),
-                    0, false, game, 1
-                )
-            end
-        end
-    end
-end)
-
--- // 3. AUTO REEL (INSTANT CATCH) //
-task.spawn(function()
-    while getgenv().AutoFarm do
-        task.wait(0.01)
-        local reelUI = PlayerGui:FindFirstChild("reelui", true)
-        if reelUI and reelUI.Enabled then
-            -- Firing the reelfinished event for instant catch
-            local reelEvent = ReplicatedStorage:FindFirstChild("events"):FindFirstChild("reelfinished")
-            if reelEvent then
-                reelEvent:FireServer(100, true)
-            end
-        end
-    end
-end)
-
--- // 4. AUTO SELL //
--- This checks your backpack capacity and sells when full.
-task.spawn(function()
-    while getgenv().AutoSell do
-        task.wait(2)
-        local backpack = LocalPlayer.PlayerGui:FindFirstChild("hud"):FindFirstChild("safezone"):FindFirstChild("backpack")
-        if backpack then
-            local text = backpack.Amount.Text -- Example: "10/10"
-            local current, max = text:match("(%d+)/(%d+)")
+    while true do
+        task.wait(0.1)
+        if getgenv().AutoFarm then
+            local char = game.Players.LocalPlayer.Character
+            local rod = char and char:FindFirstChildOfClass("Tool")
             
-            if current == max then
-                print("🎒 Bag Full! Selling...")
-                -- Remote for selling to Merchant
-                local sellEvent = ReplicatedStorage:FindFirstChild("events"):FindFirstChild("sellall")
-                if sellEvent then
-                    sellEvent:FireServer()
+            -- 1. Auto Cast
+            if rod and not char:FindFirstChild("FishingLine") then
+                task.wait(1)
+                rod:Activate()
+            end
+            
+            -- 2. Auto Shake
+            local shakeUI = PlayerGui:FindFirstChild("shakeui", true)
+            if shakeUI and shakeUI.Enabled then
+                local button = shakeUI:FindFirstChild("safezone", true):FindFirstChild("button", true)
+                if button and button.Visible then
+                    VirtualInputManager:SendMouseButtonEvent(
+                        button.AbsolutePosition.X + (button.AbsoluteSize.X/2),
+                        button.AbsolutePosition.Y + (button.AbsoluteSize.Y/2),
+                        0, true, game, 1
+                    )
+                    VirtualInputManager:SendMouseButtonEvent(button.AbsolutePosition.X, button.AbsolutePosition.Y, 0, false, game, 1)
+                end
+            end
+            
+            -- 3. Auto Reel (Instant)
+            local reelUI = PlayerGui:FindFirstChild("reelui", true)
+            if reelUI and reelUI.Enabled then
+                local reelEvent = ReplicatedStorage:FindFirstChild("events"):FindFirstChild("reelfinished")
+                if reelEvent then
+                    reelEvent:FireServer(100, true)
+                    FishCaught = FishCaught + 1
+                    FishLabel:Set("Fish Caught: " .. FishCaught)
+                end
+            end
+        end
+    end
+end)
+
+-- [[ LOGIC: AUTO SELL ]] --
+task.spawn(function()
+    while task.wait(5) do
+        if getgenv().AutoSell then
+            local hud = PlayerGui:FindFirstChild("hud")
+            local backpack = hud and hud:FindFirstChild("safezone", true):FindFirstChild("backpack", true)
+            if backpack then
+                local text = backpack.Amount.Text
+                local current, max = text:match("(%d+)/(%d+)")
+                if current == max then
+                    local sellEvent = ReplicatedStorage:FindFirstChild("events"):FindFirstChild("sellall")
+                    if sellEvent then sellEvent:FireServer() end
                 end
             end
         end
