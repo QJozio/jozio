@@ -1,40 +1,42 @@
--- CONFIG
-local MONEY_STAT_NAME = "Coins" -- change if needed
-local UPDATE_INTERVAL = 1 -- seconds
+-- SIMPLE AUTO FISH (MACRO STYLE)
+-- Toggle with F
 
--- SERVICES
 local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+local UserInputService = game:GetService("UserInputService")
+
 local player = Players.LocalPlayer
+local enabled = false
 
--- WAIT FOR STATS
-local leaderstats = player:WaitForChild("leaderstats")
-local moneyStat = leaderstats:WaitForChild(MONEY_STAT_NAME)
-
--- VARIABLES
-local startTime = os.clock()
-local startingMoney = moneyStat.Value
-
-print("💰 Money/hour tracker started")
-print("Starting money:", startingMoney)
-
-while true do
-    task.wait(UPDATE_INTERVAL)
-
-    local elapsedSeconds = os.clock() - startTime
-    local elapsedHours = elapsedSeconds / 3600
-
-    local currentMoney = moneyStat.Value
-    local earned = currentMoney - startingMoney
-
-    local perHour = 0
-    if elapsedHours > 0 then
-        perHour = math.floor(earned / elapsedHours)
+-- TOGGLE KEY
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        enabled = not enabled
+        print("🎣 Auto Fish:", enabled and "ON" or "OFF")
     end
+end)
 
-    print(
-        "⏱ Time:",
-        string.format("%.2f", elapsedHours), "hrs |",
-        "➕ Earned:", earned, "|",
-        "📈 Per Hour:", perHour
-    )
-end
+-- MAIN LOOP
+task.spawn(function()
+    while true do
+        task.wait(1)
+
+        if enabled then
+            -- CAST
+            VirtualUser:Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            task.wait(0.2)
+            VirtualUser:Button1Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+
+            -- WAIT FOR BITE
+            task.wait(3) -- adjust if needed
+
+            -- REEL
+            VirtualUser:Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            task.wait(0.3)
+            VirtualUser:Button1Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+
+            task.wait(1.5)
+        end
+    end
+end)
